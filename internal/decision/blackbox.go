@@ -10,7 +10,7 @@ package decision
 // - Clamp at 0 (non-negative integer requirement). :contentReference[oaicite:5]{index=5}
 func BlackBoxOrderWithPipeline(roleHistory []RoleState, roleOrders []int, safetyStock int, window int) int {
 	if len(roleHistory) == 0 {
-		return 10
+		return 5
 	}
 
 	last := roleHistory[len(roleHistory)-1]
@@ -29,7 +29,7 @@ func BlackBoxOrderWithPipeline(roleHistory []RoleState, roleOrders []int, safety
 	}
 
 	// assume lead time L=2 (common Beer Game)
-	L := 2
+	L := 3
 	targetPosition := forecast*(L+1) + safetyStock
 	inventoryPosition := last.Inventory - last.Backlog + pipeline
 
