@@ -8,16 +8,32 @@ package decision
 // - Maintain a small safety stock buffer.
 // - Order enough to cover forecast + backlog + safety - current inventory.
 // - Clamp at 0 (non-negative integer requirement). :contentReference[oaicite:5]{index=5}
-func BlackBoxOrder(history []RoleState, safetyStock int, window int) int {
-	if len(history) == 0 {
-		// If no history, return a safe baseline.
+func BlackBoxOrderWithPipeline(roleHistory []RoleState, roleOrders []int, safetyStock int, window int) int {
+	if len(roleHistory) == 0 {
 		return 10
 	}
-	last := history[len(history)-1]
 
-	forecast := movingAverageIncomingOrders(history, window)
+	last := roleHistory[len(roleHistory)-1]
+	forecast := movingAverageIncomingOrders(roleHistory, window)
 
-	order := forecast + last.Backlog + safetyStock - last.Inventory
+	// pipeline = sum(orders) - sum(arriving_shipments)
+	pipeline := 0
+	for i := 0; i < len(roleHistory); i++ {
+		if i < len(roleOrders) {
+			pipeline += roleOrders[i]
+		}
+		pipeline -= roleHistory[i].ArrivingShipments
+		if pipeline < 0 {
+			pipeline = 0
+		}
+	}
+
+	// assume lead time L=2 (common Beer Game)
+	L := 2
+	targetPosition := forecast*(L+1) + safetyStock
+	inventoryPosition := last.Inventory - last.Backlog + pipeline
+
+	order := targetPosition - inventoryPosition
 	if order < 0 {
 		order = 0
 	}

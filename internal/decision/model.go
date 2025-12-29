@@ -27,3 +27,15 @@ func ExtractRoleHistory(weeks []WeekState, role string) []RoleState {
 	}
 	return out
 }
+
+func ExtractRoleOrders(weeks []WeekState, role string) []int {
+	out := make([]int, 0, len(weeks))
+	for _, w := range weeks {
+		if w.Orders == nil {
+			out = append(out, 0)
+			continue
+		}
+		out = append(out, w.Orders[role])
+	}
+	return out
+}

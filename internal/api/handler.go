@@ -53,6 +53,7 @@ func (c Config) Validate() error {
 	// algorithm_name: 3–32 chars, letters/digits/underscores
 	re := regexp.MustCompile(`^[A-Za-z0-9_]{3,32}$`)
 	if !re.MatchString(c.AlgorithmName) {
+		log.Printf("ALGORITHM_NAME does not match %s", c.AlgorithmName)
 		return errors.New("ALGORITHM_NAME must be 3–32 chars: letters/digits/underscores only")
 	}
 	// version: "v1" or "v1.2.3" style (lenient)
@@ -207,8 +208,10 @@ func NewDecisionHandlerBuffered(cfg Config) http.Handler {
 		orders := make(map[string]int, 4)
 		for _, role := range []string{"retailer", "wholesaler", "distributor", "factory"} {
 			history := decision.ExtractRoleHistory(req.Weeks, role)
-			log.Printf("role: ", role, "history: ", history)
-			o := decision.BlackBoxOrder(history, cfg.SafetyStock, cfg.MAWindow)
+			log.Printf("role=%s history_len=%d", role, len(history))
+
+			ordersHist := decision.ExtractRoleOrders(req.Weeks, role)
+			o := decision.BlackBoxOrderWithPipeline(history, ordersHist, cfg.SafetyStock, cfg.MAWindow)
 			if cfg.MaxOrder > 0 && o > cfg.MaxOrder {
 				o = cfg.MaxOrder
 			}
